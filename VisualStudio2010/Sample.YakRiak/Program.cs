@@ -1,6 +1,4 @@
-﻿using CorrugatedIron.Comms;
-using Microsoft.Practices.Unity;
-using CorrugatedIron;
+﻿using CorrugatedIron;
 
 namespace Sample.YakRiak
 {
@@ -8,13 +6,13 @@ namespace Sample.YakRiak
     {
         static void Main(string[] args)
         {
-            var container = UnityBootstrapper.Bootstrap();
-            var client = container.Resolve<IRiakClient>();
+            var cluster = RiakCluster.FromConfig("riakConfig");
+            var client = cluster.CreateClient();
 
             var yak = new YakRiak(client);
             yak.Run();
 
-            container.Resolve<IRiakCluster>().Dispose();
+            cluster.Dispose();
         }
     }
 }

@@ -6,22 +6,25 @@ using System.Web;
 using System.Web.Configuration;
 using System.Web.SessionState;
 using CorrugatedIron.Models.MapReduce;
-using CorrugatedIron.Models.MapReduce.Inputs;
 using Newtonsoft.Json;
 using CorrugatedIron;
 using CorrugatedIron.Models;
 using CorrugatedIron.Extensions;
-using Microsoft.Practices.Unity;
 
 namespace Sample.SessionStateProvider
 {
     public class RiakSessionStateStore : SessionStateStoreProviderBase
     {
-
         private IRiakClient _client;
         private SessionStateSection _config;
         private SessionStateItemExpireCallback _expireCallBack = null;
         private System.Timers.Timer _expiredSessionDeletionTimer;
+        private static readonly IRiakCluster Cluster;
+
+        static RiakSessionStateStore()
+        {
+            Cluster = RiakCluster.FromConfig("riakConfig");
+        }
 
         public new string Description
         {
@@ -49,10 +52,9 @@ namespace Sample.SessionStateProvider
             Configuration cfg = WebConfigurationManager.OpenWebConfiguration(ApplicationName);
             _config = (SessionStateSection)cfg.GetSection("system.web/sessionState");
 
-            var container = UnityBootstrapper.Bootstrap();
-            _client = container.Resolve<IRiakClient>();
+            _client = Cluster.CreateClient();
 
-            var riakSessionConfiguration = container.Resolve<RiakSessionStateConfiguration>();
+            var riakSessionConfiguration = RiakSessionStateConfiguration.LoadFromConfig("riakSessionConfiguration");
             int expiredSessionDeletionInterval = riakSessionConfiguration.TimeoutInMilliseconds;
 
             _expiredSessionDeletionTimer = new System.Timers.Timer(expiredSessionDeletionInterval);

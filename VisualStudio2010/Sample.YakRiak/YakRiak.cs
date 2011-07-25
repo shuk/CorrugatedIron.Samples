@@ -3,10 +3,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using CorrugatedIron;
-using CorrugatedIron.Extensions;
 using CorrugatedIron.Models;
 using CorrugatedIron.Models.MapReduce;
-using CorrugatedIron.Util;
 
 namespace Sample.YakRiak
 {

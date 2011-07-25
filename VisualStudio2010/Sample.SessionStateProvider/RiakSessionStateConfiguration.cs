@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
+﻿using System.Configuration;
 
 namespace Sample.SessionStateProvider
 {
@@ -13,7 +9,7 @@ namespace Sample.SessionStateProvider
             return (RiakSessionStateConfiguration)ConfigurationManager.GetSection(sectionName);
         }
 
-        [ConfigurationProperty("timeout_in_ms", IsDefaultCollection = true, IsRequired = true)]
+        [ConfigurationProperty("timeout_ms", IsDefaultCollection = true, IsRequired = true)]
         public int TimeoutInMilliseconds
         {
             get { return (int) this["timeout_in_ms"]; }

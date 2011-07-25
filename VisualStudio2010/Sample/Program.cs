@@ -32,47 +32,59 @@ namespace Sample
         static void Main(string[] args)
         {
             Console.WriteLine("Choose a bootstrapper:");
+            Console.WriteLine(" 0 : None (manual)");
             Console.WriteLine(" 1 : Unity");
             Console.WriteLine(" 2 : TinyIoC");
             Console.WriteLine(" 3 : Autofac");
             Console.WriteLine(" 4 : Autofac");
             Console.WriteLine(" 5 : Ninject");
-            Console.Write("Enter number [1 to 5] > ");
+            Console.Write("Enter number [0 to 5] > ");
 
             // get an instance of a RiakClient that we can use
             IRiakClient client;
 
             switch (Console.ReadLine())
             {
+                case "1":
+                    {
+                        Console.WriteLine("Firing up Unity...");
+                        var container = UnityBootstrapper.Bootstrap();
+                        client = container.Resolve<IRiakClient>();
+                        break;
+                    }
                 case "2":
                     {
+                        Console.WriteLine("Firing up TinyIoC...");
                         var container = TinyIocBootstrapper.Bootstrap();
                         client = container.Resolve<IRiakClient>();
                         break;
                     }
                 case "3":
                     {
+                        Console.WriteLine("Firing up Autofac...");
                         var container = AutofacBootstrapper.Bootstrap();
                         client = container.Resolve<IRiakClient>();
                         break;
                     }
                 case "4":
                     {
+                        Console.WriteLine("Firing up StructureMap...");
                         var container = StructuremapBootstrapper.Bootstrap();
                         client = container.GetInstance<IRiakClient>();
                         break;
                     }
                 case "5":
                     {
+                        Console.WriteLine("Firing up Ninject...");
                         var container = NinjectBootstrapper.Bootstrap();
                         client = container.Get<IRiakClient>();
                         break;
                     }
                 default:
                     {
-                        // grab a unity container which has everything we need wired in
-                        var container = UnityBootstrapper.Bootstrap();
-                        client = container.Resolve<IRiakClient>();
+                        Console.WriteLine("Manual configuration...");
+                        var cluster = RiakCluster.FromConfig("riakConfig");
+                        client = cluster.CreateClient();
                         break;
                     }
             }
