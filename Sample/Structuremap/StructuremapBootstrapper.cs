@@ -21,10 +21,10 @@ namespace Sample.Structuremap
                     expr.For<IRiakConnectionFactory>().Singleton().Use<RiakConnectionFactory>();
 
                     // register the default cluster (single instance)
-                    expr.For<IRiakCluster>().Singleton().Use<RiakCluster>();
+                    expr.For<IRiakEndPoint>().Singleton().Use<RiakCluster>();
 
                     // register the client creator (multiple instance)
-                    expr.For<IRiakClient>().Use(ctx => ctx.GetInstance<IRiakCluster>().CreateClient());
+                    expr.For<IRiakClient>().Use(ctx => ctx.GetInstance<IRiakEndPoint>().CreateClient());
                 });
 
             return container;

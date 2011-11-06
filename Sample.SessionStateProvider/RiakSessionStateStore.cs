@@ -19,11 +19,11 @@ namespace Sample.SessionStateProvider
         private SessionStateSection _config;
         private SessionStateItemExpireCallback _expireCallBack = null;
         private System.Timers.Timer _expiredSessionDeletionTimer;
-        private static readonly IRiakCluster Cluster;
+        private static readonly IRiakEndPoint EndPoint;
 
         static RiakSessionStateStore()
         {
-            Cluster = RiakCluster.FromConfig("riakConfig");
+            EndPoint = RiakCluster.FromConfig("riakConfig");
         }
 
         public new string Description
@@ -52,7 +52,7 @@ namespace Sample.SessionStateProvider
             Configuration cfg = WebConfigurationManager.OpenWebConfiguration(ApplicationName);
             _config = (SessionStateSection)cfg.GetSection("system.web/sessionState");
 
-            _client = Cluster.CreateClient();
+            _client = EndPoint.CreateClient();
 
             var riakSessionConfiguration = RiakSessionStateConfiguration.LoadFromConfig("riakSessionConfiguration");
             int expiredSessionDeletionInterval = riakSessionConfiguration.TimeoutInMilliseconds;
@@ -276,7 +276,7 @@ function (value, keyData, arg) {
             
             if (results.IsSuccess)
             {
-                var keys = results.Value.PhaseResults.Last().Value.FromRiakString();
+                var keys = results.Value.PhaseResults.Last().Values.First().FromRiakString();
                 var keyList = JsonConvert.DeserializeObject<string[]>(keys);
 
                 var riakObjectIdList = keyList.Select(key => new RiakObjectId(ApplicationName, key)).ToList();
@@ -322,7 +322,7 @@ function (value, keyData, arg) {
 
             if (results.IsSuccess)
             {
-                var keys = results.Value.PhaseResults.Last().Value.FromRiakString();
+                var keys = results.Value.PhaseResults.Last().Values.First().FromRiakString();
                 var keyList = JsonConvert.DeserializeObject<string[]>(keys);
 
                 var riakObjectIdList = keyList.Select(key => new RiakObjectId(ApplicationName, key)).ToList();

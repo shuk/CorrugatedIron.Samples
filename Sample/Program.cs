@@ -185,7 +185,7 @@ namespace Sample
             var blockingMRResult = client.MapReduce(sumMapRed);
             System.Diagnostics.Debug.Assert(blockingMRResult.IsSuccess);
             // next, pull out the phase we're interested in to get the result we want
-            var reducePhaseResult = blockingMRResult.Value.PhaseResults.Last().GetObject<int[]>();
+            var reducePhaseResult = blockingMRResult.Value.PhaseResults.Last().GetObjects<int[]>().SelectMany(p => p).ToArray();
             System.Diagnostics.Debug.Assert(reducePhaseResult[0] == 12);
 
             // now let's do the same thing, but with the blocking version that streams
@@ -198,7 +198,7 @@ namespace Sample
             {
                 if (result.Phase == 1)
                 {
-                    var json = JArray.Parse(result.Value.FromRiakString());
+                    var json = JArray.Parse(result.Values[0].FromRiakString());
                     System.Diagnostics.Debug.Assert(json[0].Value<int>() == 12);
                 }
             }
@@ -237,7 +237,7 @@ namespace Sample
                 Console.WriteLine("Handling async result ...");
                 if (result.Phase == 1)
                 {
-                    System.Diagnostics.Debug.Assert(result.GetObject<int[]>()[0] == 12);
+                    System.Diagnostics.Debug.Assert(result.GetObjects<int[]>().First()[0] == 12);
                 }
             }
 

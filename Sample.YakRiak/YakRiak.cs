@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -122,10 +123,11 @@ namespace Sample.YakRiak
                 foreach (var phase in result.Value.PhaseResults)
                 {
                     // make sure we get hold of the phase result which has data
-                    if (phase.Value != null)
+                    if (phase.Values != null)
                     {
                         // deserialize into an array of messages
-                        var messages = phase.GetObject<YakMessage[]>();
+                        //var messages = phase.GetObject<YakMessage[]>();
+                        var messages = phase.GetObjects<YakMessage[]>().SelectMany(m => m);
 
                         // throw them on screen
                         foreach (var m in messages)

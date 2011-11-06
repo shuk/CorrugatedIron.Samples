@@ -21,10 +21,10 @@ namespace Sample.Autofac
             builder.RegisterType<RiakConnectionFactory>().As<IRiakConnectionFactory>().SingleInstance();
 
             // register the default cluster (single instance)
-            builder.RegisterType<RiakCluster>().As<IRiakCluster>().SingleInstance();
+            builder.RegisterType<RiakCluster>().As<IRiakEndPoint>().SingleInstance();
 
             // register the client creator (multiple instance)
-            builder.Register(c => c.Resolve<IRiakCluster>().CreateClient()).As<IRiakClient>();
+            builder.Register(c => c.Resolve<IRiakEndPoint>().CreateClient()).As<IRiakClient>();
 
             return builder.Build();
         }

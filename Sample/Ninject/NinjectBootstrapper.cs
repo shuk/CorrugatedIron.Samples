@@ -20,10 +20,10 @@ namespace Sample.Ninject
             container.Bind<IRiakConnectionFactory>().To<RiakConnectionFactory>().InSingletonScope();
 
             // register the default cluster (single instance)
-            container.Bind<IRiakCluster>().To<RiakCluster>().InSingletonScope();
+            container.Bind<IRiakEndPoint>().To<RiakCluster>().InSingletonScope();
 
             // register the client creator (multiple instance)
-            container.Bind<IRiakClient>().ToMethod(ctx => container.Get<IRiakCluster>().CreateClient());
+            container.Bind<IRiakClient>().ToMethod(ctx => container.Get<IRiakEndPoint>().CreateClient());
 
             return container;
         }

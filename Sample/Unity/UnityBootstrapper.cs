@@ -19,10 +19,10 @@ namespace Sample.Unity
             // register the default connection factory (single instance)
             container.RegisterType<IRiakConnectionFactory, RiakConnectionFactory>(new ContainerControlledLifetimeManager());
             // register the default cluster (single instance)
-            container.RegisterType<IRiakCluster, RiakCluster>(new ContainerControlledLifetimeManager());
+            container.RegisterType<IRiakEndPoint, RiakCluster>(new ContainerControlledLifetimeManager());
 
             // register the client creator (multiple instance)
-            container.RegisterType<IRiakClient>(new InjectionFactory(c => c.Resolve<IRiakCluster>().CreateClient()));
+            container.RegisterType<IRiakClient>(new InjectionFactory(c => c.Resolve<IRiakEndPoint>().CreateClient()));
 
             return container;
         }

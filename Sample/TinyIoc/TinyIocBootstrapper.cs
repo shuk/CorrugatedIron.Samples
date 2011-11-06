@@ -21,10 +21,10 @@ namespace Sample.TinyIoc
             container.Register<IRiakConnectionFactory, RiakConnectionFactory>().AsSingleton();
 
             // register the default cluster (single instance)
-            container.Register<IRiakCluster, RiakCluster>().AsSingleton();
+            container.Register<IRiakEndPoint, RiakCluster>().AsSingleton();
 
             // register the client creator (multiple instance)
-            container.Register<IRiakClient>((c, np) => c.Resolve<IRiakCluster>().CreateClient());
+            container.Register<IRiakClient>((c, np) => c.Resolve<IRiakEndPoint>().CreateClient());
 
             return container;
         }
