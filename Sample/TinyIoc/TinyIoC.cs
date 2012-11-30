@@ -661,9 +661,26 @@ namespace TinyIoC
         public void AutoRegister()
         {
 #if APPDOMAIN_GETASSEMBLIES
-            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), true);
+            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), true, null);
 #else
-            AutoRegisterInternal(new Assembly[] {this.GetType().Assembly}, true);
+            AutoRegisterInternal(new Assembly[] {this.GetType().Assembly}, true, null);
+#endif
+        }
+
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
+        /// Types will only be registered if they pass the supplied registration predicate.
+        /// 
+        /// If more than one class implements an interface then only one implementation will be registered
+        /// although no error will be thrown.
+        /// </summary>
+        /// <param name="registrationPredicate">Predicate to determine if a particular type should be registered</param>
+        public void AutoRegister(Func<Type, bool> registrationPredicate)
+        {
+#if APPDOMAIN_GETASSEMBLIES
+            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), true, registrationPredicate);
+#else
+            AutoRegisterInternal(new Assembly[] {this.GetType().Assembly}, true, registrationPredicate);
 #endif
         }
 
@@ -675,33 +692,26 @@ namespace TinyIoC
         public void AutoRegister(bool ignoreDuplicateImplementations)
         {
 #if APPDOMAIN_GETASSEMBLIES
-            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), ignoreDuplicateImplementations);
+            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), ignoreDuplicateImplementations, null);
 #else
-            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly }, ignoreDuplicateImplementations);
+            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly }, ignoreDuplicateImplementations, null);
 #endif
         }
 
         /// <summary>
-        /// Attempt to automatically register all non-generic classes and interfaces in the specified assembly
-        /// 
-        /// If more than one class implements an interface then only one implementation will be registered
-        /// although no error will be thrown.
+        /// Attempt to automatically register all non-generic classes and interfaces in the current app domain.
+        /// Types will only be registered if they pass the supplied registration predicate.
         /// </summary>
-        /// <param name="assembly">Assembly to process</param>
-        public void AutoRegister(Assembly assembly)
-        {
-            AutoRegisterInternal(new Assembly[] { assembly }, true);
-        }
-
-        /// <summary>
-        /// Attempt to automatically register all non-generic classes and interfaces in the specified assembly
-        /// </summary>
-        /// <param name="assembly">Assembly to process</param>
         /// <param name="ignoreDuplicateImplementations">Whether to ignore duplicate implementations of an interface/base class. False=throw an exception</param>
+        /// <param name="registrationPredicate">Predicate to determine if a particular type should be registered</param>
         /// <exception cref="TinyIoCAutoRegistrationException"/>
-        public void AutoRegister(Assembly assembly, bool ignoreDuplicateImplementations)
+        public void AutoRegister(bool ignoreDuplicateImplementations, Func<Type, bool> registrationPredicate)
         {
-            AutoRegisterInternal(new Assembly[] { assembly }, ignoreDuplicateImplementations);
+#if APPDOMAIN_GETASSEMBLIES
+            AutoRegisterInternal(AppDomain.CurrentDomain.GetAssemblies().Where(a => !IsIgnoredAssembly(a)), ignoreDuplicateImplementations, registrationPredicate);
+#else
+            AutoRegisterInternal(new Assembly[] { this.GetType().Assembly }, ignoreDuplicateImplementations, registrationPredicate);
+#endif
         }
 
         /// <summary>
@@ -713,7 +723,21 @@ namespace TinyIoC
         /// <param name="assemblies">Assemblies to process</param>
         public void AutoRegister(IEnumerable<Assembly> assemblies)
         {
-            AutoRegisterInternal(assemblies, true);
+            AutoRegisterInternal(assemblies, true, null);
+        }
+
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the specified assemblies
+        /// Types will only be registered if they pass the supplied registration predicate.
+        /// 
+        /// If more than one class implements an interface then only one implementation will be registered
+        /// although no error will be thrown.
+        /// </summary>
+        /// <param name="assemblies">Assemblies to process</param>
+        /// <param name="registrationPredicate">Predicate to determine if a particular type should be registered</param>
+        public void AutoRegister(IEnumerable<Assembly> assemblies, Func<Type, bool> registrationPredicate)
+        {
+            AutoRegisterInternal(assemblies, true, registrationPredicate);
         }
 
         /// <summary>
@@ -724,7 +748,20 @@ namespace TinyIoC
         /// <exception cref="TinyIoCAutoRegistrationException"/>
         public void AutoRegister(IEnumerable<Assembly> assemblies, bool ignoreDuplicateImplementations)
         {
-            AutoRegisterInternal(assemblies, ignoreDuplicateImplementations);
+            AutoRegisterInternal(assemblies, ignoreDuplicateImplementations, null);
+        }
+
+        /// <summary>
+        /// Attempt to automatically register all non-generic classes and interfaces in the specified assemblies
+        /// Types will only be registered if they pass the supplied registration predicate.
+        /// </summary>
+        /// <param name="assemblies">Assemblies to process</param>
+        /// <param name="ignoreDuplicateImplementations">Whether to ignore duplicate implementations of an interface/base class. False=throw an exception</param>
+        /// <param name="registrationPredicate">Predicate to determine if a particular type should be registered</param>
+        /// <exception cref="TinyIoCAutoRegistrationException"/>
+        public void AutoRegister(IEnumerable<Assembly> assemblies, bool ignoreDuplicateImplementations, Func<Type, bool> registrationPredicate)
+        {
+            AutoRegisterInternal(assemblies, ignoreDuplicateImplementations, registrationPredicate);
         }
 
         /// <summary>
@@ -2035,7 +2072,7 @@ namespace TinyIoC
                 }
                 catch (TinyIoCResolutionException ex)
                 {
-                    throw new TinyIoCResolutionException(typeof(RegisterImplementation), ex);
+                    throw new TinyIoCResolutionException(typeof(RegisterType), ex);
                 }
             }
 
@@ -2565,13 +2602,13 @@ namespace TinyIoC
 
         #region Internal Methods
         private readonly object _AutoRegisterLock = new object();
-        private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, bool ignoreDuplicateImplementations)
+        private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, bool ignoreDuplicateImplementations, Func<Type, bool> registrationPredicate)
         {
             lock (_AutoRegisterLock)
             {
                 var defaultFactoryMethod = this.GetType().GetMethod("GetDefaultObjectFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t)).ToList();
+                var types = assemblies.SelectMany(a => a.SafeGetTypes()).Where(t => !IsIgnoredType(t, registrationPredicate)).ToList();
 
                 var concreteTypes = from type in types
                                     where (type.IsClass == true) && (type.IsAbstract == false) && (type != this.GetType() && (type.DeclaringType != this.GetType()) && (!type.IsGenericTypeDefinition))
@@ -2645,7 +2682,7 @@ namespace TinyIoC
             return false;
         }
 
-        private bool IsIgnoredType(Type type)
+        private bool IsIgnoredType(Type type, Func<Type, bool> registrationPredicate)
         {
             // TODO - find a better way to remove "system" types from the auto registration
             var ignoreChecks = new List<Func<Type, bool>>()
@@ -2658,6 +2695,11 @@ namespace TinyIoC
 #endif
                 t => (t.GetConstructors(BindingFlags.Instance | BindingFlags.Public).Length == 0) && !(t.IsInterface || t.IsAbstract),
             };
+
+            if (registrationPredicate != null)
+            {
+                ignoreChecks.Add(t => !registrationPredicate(t));    
+            }
 
             foreach (var check in ignoreChecks)
             {
@@ -2834,6 +2876,10 @@ namespace TinyIoC
                 {
                     return factory.GetObject(this, parameters, options);
                 }
+                catch (TinyIoCResolutionException)
+                {
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     throw new TinyIoCResolutionException(registration.Type, ex);
@@ -2847,6 +2893,10 @@ namespace TinyIoC
                 try
                 {
                     return bubbledObjectFactory.GetObject(this, parameters, options);
+                }
+                catch (TinyIoCResolutionException)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -2866,6 +2916,10 @@ namespace TinyIoC
                     try
                     {
                         return factory.GetObject(this, parameters, options);
+                    }
+                    catch (TinyIoCResolutionException)
+                    {
+                        throw;
                     }
                     catch (Exception ex)
                     {
@@ -3012,17 +3066,14 @@ namespace TinyIoC
 
             // Get constructors in reverse order based on the number of parameters
             // i.e. be as "greedy" as possible so we satify the most amount of dependencies possible
-            var ctors = from ctor in type.GetConstructors()
-                        orderby ctor.GetParameters().Count() descending
-                        select ctor;
+            var ctors = this.GetTypeConstructors(type);
 
-            foreach (var ctor in ctors)
-            {
-                if (CanConstruct(ctor, parameters, options))
-                    return ctor;
-            }
+            return ctors.FirstOrDefault(ctor => this.CanConstruct(ctor, parameters, options));
+        }
 
-            return null;
+        private IEnumerable<ConstructorInfo> GetTypeConstructors(Type type)
+        {
+            return type.GetConstructors().OrderByDescending(ctor => ctor.GetParameters().Count());
         }
 
         private object ConstructType(Type type, ResolveOptions options)
@@ -3043,7 +3094,13 @@ namespace TinyIoC
         private object ConstructType(Type type, ConstructorInfo constructor, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (constructor == null)
-                constructor = GetBestConstructor(type, parameters, options);
+            {
+                // Try and get the best constructor that we can construct
+                // if we can't construct any then get the constructor
+                // with the least number of parameters so we can throw a meaningful
+                // resolve exception
+                constructor = GetBestConstructor(type, parameters, options) ?? GetTypeConstructors(type).LastOrDefault();
+            }
 
             if (constructor == null)
                 throw new TinyIoCResolutionException(type);
@@ -3055,7 +3112,26 @@ namespace TinyIoC
             {
                 var currentParam = ctorParams[parameterIndex];
 
-                args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? parameters[currentParam.Name] : ResolveInternal(new TypeRegistration(currentParam.ParameterType), NamedParameterOverloads.Default, options);
+                try
+                {
+                    args[parameterIndex] = parameters.ContainsKey(currentParam.Name) ? 
+                                            parameters[currentParam.Name] : 
+                                            ResolveInternal(
+                                                new TypeRegistration(currentParam.ParameterType), 
+                                                NamedParameterOverloads.Default, 
+                                                options);
+                }
+                catch (TinyIoCResolutionException ex)
+                {
+                    // If a constructor parameter can't be resolved
+                    // it will throw, so wrap it and throw that this can't
+                    // be resolved.
+                    throw new TinyIoCResolutionException(type, ex);
+                }
+                catch (Exception ex)
+                {
+                    throw new TinyIoCResolutionException(type, ex);
+                }
             }
 
             try

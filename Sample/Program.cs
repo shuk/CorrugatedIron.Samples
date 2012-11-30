@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Autofac;
 using CorrugatedIron;
 using CorrugatedIron.Extensions;
@@ -182,10 +183,10 @@ namespace Sample
             // execute this query with blocking IO, waiting for all the results to come
             // back before we process them
             Console.WriteLine("Blocking map/reduce query ...");
-            var blockingMRResult = client.MapReduce(sumMapRed);
-            System.Diagnostics.Debug.Assert(blockingMRResult.IsSuccess);
+            var blockingMrResult = client.MapReduce(sumMapRed);
+            System.Diagnostics.Debug.Assert(blockingMrResult.IsSuccess);
             // next, pull out the phase we're interested in to get the result we want
-            var reducePhaseResult = blockingMRResult.Value.PhaseResults.Last().GetObjects<int[]>().SelectMany(p => p).ToArray();
+            var reducePhaseResult = blockingMrResult.Value.PhaseResults.Last().GetObjects<int[]>().SelectMany(p => p).ToArray();
             System.Diagnostics.Debug.Assert(reducePhaseResult[0] == 12);
 
             // now let's do the same thing, but with the blocking version that streams
@@ -214,11 +215,10 @@ namespace Sample
             // create an event to wait on while the results are being processed
             // (usually you wouldn't worry about this in a Ui app, you'd just take
             // the result of the other thread and dispatch it to the UI when processed)
-            var autoResetEvent = new AutoResetEvent(false);
             Console.WriteLine("Starting async streaming map/reduce query ...");
-            client.Async.StreamMapReduce(sumMapRed, result => HandleStreamingMapReduce(result, autoResetEvent));
+            var task = client.Async.StreamMapReduce(sumMapRed).ContinueWith(HandleStreamingMapReduce);
             Console.WriteLine("Waiting for async streaming map/reduce query result ...");
-            autoResetEvent.WaitOne();
+            task.Wait();
 
             // finally delete the bucket (this can also be done asynchronously)
             // this calls ListKeys behind the scenes, so it's a very slow process. Riak
@@ -229,10 +229,11 @@ namespace Sample
             Console.WriteLine("Sample app complete!");
         }
 
-        static void HandleStreamingMapReduce(RiakResult<RiakStreamedMapReduceResult> streamingMRResult, EventWaitHandle handle)
+        static void HandleStreamingMapReduce(Task<RiakResult<RiakStreamedMapReduceResult>> task)
         {
-            System.Diagnostics.Debug.Assert(streamingMRResult.IsSuccess);
-            foreach (var result in streamingMRResult.Value.PhaseResults)
+            var streamingMrResult = task.Result;
+            System.Diagnostics.Debug.Assert(streamingMrResult.IsSuccess);
+            foreach (var result in streamingMrResult.Value.PhaseResults)
             {
                 Console.WriteLine("Handling async result ...");
                 if (result.Phase == 1)
@@ -240,8 +241,6 @@ namespace Sample
                     System.Diagnostics.Debug.Assert(result.GetObjects<int[]>().First()[0] == 12);
                 }
             }
-
-            handle.Set();
         }
 
         static RiakObject CreateData(int index)
