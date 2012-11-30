@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using CorrugatedIron;
 using CorrugatedIron.Models;
 using CorrugatedIron.Models.MapReduce;
@@ -113,11 +114,12 @@ namespace Sample.YakRiak
             WaitRandom();
 
             // then asyncrhonously stream the result set
-            _riakClient.Async.StreamMapReduce(pollQuery, Poll);
+            _riakClient.Async.StreamMapReduce(pollQuery).ContinueWith(Poll);
         }
 
-        private void Poll(RiakResult<RiakStreamedMapReduceResult> result)
+        private void Poll(Task<RiakResult<RiakStreamedMapReduceResult>> task)
         {
+            var result = task.Result;
             if (result.IsSuccess)
             {
                 foreach (var phase in result.Value.PhaseResults)
@@ -149,7 +151,7 @@ namespace Sample.YakRiak
             WaitRandom();
 
             // and off we go again.
-            _riakClient.Async.StreamMapReduce(pollQuery, Poll);
+            _riakClient.Async.StreamMapReduce(pollQuery).ContinueWith(Poll);
         }
 
         private void WaitRandom()
