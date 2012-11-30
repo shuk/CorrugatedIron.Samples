@@ -199,9 +199,13 @@ namespace Sample.YakRiak
 \ \ / /_ _| | _|  _ \(_) __ _| | __ | \ | | ____|_   _|
  \ V / _` | |/ / |_) | |/ _` | |/ / |  \| |  _|   | |  
   | | (_| |   <|  _ <| | (_| |   < _| |\  | |___  | |  
-  |_|\__,_|_|\_\_| \_\_|\__,_|_|\_(_)_| \_|_____| |_|  ";
+  |_|\__,_|_|\_\_| \_\_|\__,_|_|\_(_)_| \_|_____| |_|
+
+";
 
             Console.WriteLine(header);
+            Console.WriteLine("Make sure that YakRiak is installed in your Riak cluster otherwise this won't work.");
+            Console.WriteLine("Download it from https://github.com/seancribbs/yakriak");
             Console.WriteLine();
         }
 
