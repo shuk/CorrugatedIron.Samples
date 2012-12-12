@@ -220,6 +220,8 @@ namespace Sample
             Console.WriteLine("Waiting for async streaming map/reduce query result ...");
             task.Wait();
 
+            var listedKeys = client.ListKeys(Bucket);
+
             // finally delete the bucket (this can also be done asynchronously)
             // this calls ListKeys behind the scenes, so it's a very slow process. Riak
             // doesn't currently have the ability to quickly delete a bucket.
