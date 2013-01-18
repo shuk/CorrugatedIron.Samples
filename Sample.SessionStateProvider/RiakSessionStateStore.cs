@@ -80,8 +80,7 @@ namespace Sample.SessionStateProvider
                 Timeout = timeout
             };
 
-            _client.Async.Put(riakSessionItem.ToRiakObject(), result => { return; });
-            return;
+            _client.Async.Put(riakSessionItem.ToRiakObject());
         }
 
         public override void Dispose()
@@ -114,7 +113,7 @@ namespace Sample.SessionStateProvider
             if (riakSessionItem.LockId == (int)lockId)
             {
                 riakSessionItem.ResetTimeout();
-                _client.Async.Put(riakSessionItem.ToRiakObject(), result => { return; });
+                _client.Async.Put(riakSessionItem.ToRiakObject());
             }
         }
 
@@ -129,7 +128,7 @@ namespace Sample.SessionStateProvider
             var riakSessionItem = new RiakSessionItem(result.Value) {Timeout = _config.Timeout.Minutes};
             riakSessionItem.ResetTimeout();
 
-            _client.Async.Put(riakSessionItem.ToRiakObject(), results => { return; });
+            _client.Async.Put(riakSessionItem.ToRiakObject());
         }
 
         public override void SetAndReleaseItemExclusive(HttpContext context, string id, SessionStateStoreData item, object lockId, bool newItem)
@@ -162,7 +161,7 @@ namespace Sample.SessionStateProvider
                 riakSessionItem.Timeout = item.Timeout;
                 riakSessionItem.SessionStoreItems = Serialize(item);
 
-                _client.Async.Put(riakSessionItem.ToRiakObject(), results => { return; });
+                _client.Async.Put(riakSessionItem.ToRiakObject());
             }
         }
 
@@ -214,7 +213,7 @@ namespace Sample.SessionStateProvider
                 if (lockRecord)
                 {
                     riakSessionItem.Locked = true;
-                    _client.Async.Put(riakSessionItem.ToRiakObject(), results => { return; });
+                    _client.Async.Put(riakSessionItem.ToRiakObject());
                 }
             }
 
@@ -290,7 +289,7 @@ function (value, keyData, arg) {
                     _expireCallBack.Invoke(value.Key, Deserialize(session.SessionStoreItems));
                 }
 
-                _client.Async.Delete(riakObjectIdList, deleteResults => { return; });
+                _client.Async.Delete(riakObjectIdList);
             }
         }
 
@@ -327,7 +326,7 @@ function (value, keyData, arg) {
 
                 var riakObjectIdList = keyList.Select(key => new RiakObjectId(ApplicationName, key)).ToList();
 
-                _client.Async.Delete(riakObjectIdList, deleteResults => { return; });
+                _client.Async.Delete(riakObjectIdList);
             }
         }
     }
