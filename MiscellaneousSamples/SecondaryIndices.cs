@@ -10,6 +10,45 @@ namespace MiscellaneousSamples
 {
     public class SecondaryIndices
     {
+        public void KeysIndex()
+        {
+            Console.WriteLine("Beginning KeysIndex");
+            Console.WriteLine("\tAdding 10 items");
+
+            var Cluster = RiakCluster.FromConfig("riakConfig");
+            var Client = Cluster.CreateClient();
+            
+            var bucket = "rsds";
+
+            Client.Batch(batch =>
+                         {
+                for (var i = 1; i < 11; i++)
+                {
+                    var d = DateTime.Now.AddDays(0 - i);
+                    var doc = new RiakObject(bucket, i.ToString(), new { value = i, created_date = d });
+                    
+                    var position = 100 + i;
+                    
+                    doc.BinIndex("position").Set(position.ToString());
+                    
+                    batch.Put(doc);
+                }
+            });
+
+
+            var query = new RiakMapReduceQuery()
+                .Inputs(RiakIndex.Range("rsds", "$key", "0", "ZZZZZ"));
+
+            var result = Client.MapReduce(query);
+
+            var keys = result.Value.PhaseResults.SelectMany(x => x.GetObjects<RiakObjectId>()).ToList();
+
+            foreach (var key in keys)
+            {
+                Console.WriteLine("\t{0} : {1}", key.Bucket, key.Key);
+            }
+        }
+
         public void RangeQuery()
         {
             var Cluster = RiakCluster.FromConfig("riakConfig");

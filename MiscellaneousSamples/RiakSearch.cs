@@ -119,7 +119,7 @@ namespace MiscellaneousSamples
             
             var result = Client.Search(request);
             
-            Console.WriteLine("\InclusiveNumberSearch is a success: {0}", result.IsSuccess);
+            Console.WriteLine("\tInclusiveNumberSearch is a success: {0}", result.IsSuccess);
             Console.WriteLine("\tWe found {0} items", result.Value.Documents.Count);
             
             Client.DeleteBucket(bucket);

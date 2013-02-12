@@ -6,6 +6,9 @@ namespace MiscellaneousSamples
     {
         public static void Main()
         {
+            var rsi = new SecondaryIndices();
+            rsi.KeysIndex();
+
             var rs = new RiakSearch();
             rs.NumberSearch();
             rs.DateSearch();
