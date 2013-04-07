@@ -1,6 +1,4 @@
 ﻿using CorrugatedIron;
-using CorrugatedIron.Comms;
-using CorrugatedIron.Config;
 using StructureMap;
 
 namespace Sample.Structuremap
@@ -10,18 +8,12 @@ namespace Sample.Structuremap
         public static IContainer Bootstrap()
         {
             // pull the configuration straight out of the app.config file using the appropriate section name
-            var clusterConfig = RiakClusterConfiguration.LoadFromConfig("riakConfig");
+            var cluster = RiakCluster.FromConfig("riakConfig");
 
             var container = new Container(expr =>
                 {
-                    // register the configuration instance with the IoC container
-                    expr.For<IRiakClusterConfiguration>().Singleton().Add(clusterConfig);
-
-                    // register the default connection factory (single instance)
-                    expr.For<IRiakConnectionFactory>().Singleton().Use<RiakConnectionFactory>();
-
                     // register the default cluster (single instance)
-                    expr.For<IRiakEndPoint>().Singleton().Use<RiakCluster>();
+                    expr.For<IRiakEndPoint>().Singleton().Add(cluster);
 
                     // register the client creator (multiple instance)
                     expr.For<IRiakClient>().Use(ctx => ctx.GetInstance<IRiakEndPoint>().CreateClient());
