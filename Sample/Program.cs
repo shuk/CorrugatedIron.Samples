@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using CorrugatedIron;
@@ -130,7 +131,7 @@ namespace Sample
             // and specifying a different write quorum
             var putWithBody = CreateData(1);
             Console.WriteLine("Simple Put with custom quorum ...");
-            var putWithBodyResponse = client.Put(putWithBody, new RiakPutOptions { ReturnBody = true, W = 1 });
+            var putWithBodyResponse = client.Put(putWithBody, new RiakPutOptions { ReturnBody = true }.SetW(1));
             System.Diagnostics.Debug.Assert(putWithBodyResponse.IsSuccess);
             System.Diagnostics.Debug.Assert(putWithBodyResponse.Value != null);
             System.Diagnostics.Debug.Assert(putWithBodyResponse.Value.VectorClock != null);
